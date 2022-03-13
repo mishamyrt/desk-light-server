@@ -6,19 +6,19 @@ const test: LightTest = ['state', async ({ count, client }) => {
     const brightness = randomByte()
     const color = randomRGB()
     await client.send({
-      command: 'power_on'
+      cmd: 'power_on'
     })
     await client.send({
-      command: 'set_brightness',
+      cmd: 'set_brightness',
       args: [brightness]
     })
     await client.sleep(1000)
     await client.send({
-      command: 'set_color',
+      cmd: 'set_color',
       args: color
     })
     await client.sleep(500)
-    await client.send({ command: 'get_properties' })
+    await client.send({ cmd: 'get_props' })
     await client.sleep(500)
     const response = await client.read()
     if (response.state &&

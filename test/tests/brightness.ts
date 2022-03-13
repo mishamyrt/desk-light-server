@@ -6,7 +6,7 @@ const test: LightTest = ['brightness', async ({ count, client }) => {
     const brightness = randomByte()
     console.log(`Setting brightness to ${brightness}`)
     await client.send({
-      command: 'set_brightness',
+      cmd: 'set_brightness',
       args: [randomByte()]
     })
     await client.sleep(1000)

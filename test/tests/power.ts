@@ -4,12 +4,12 @@ const test: LightTest = ['power', async ({ count, client }) => {
   for (let i = 0; i < count; i++) {
     console.log('Disable light')
     await client.send({
-      command: 'power_off'
+      cmd: 'power_off'
     })
     await client.sleep(500)
     console.log('Enable light')
     await client.send({
-      command: 'power_on'
+      cmd: 'power_on'
     })
     await client.sleep(1000)
   }

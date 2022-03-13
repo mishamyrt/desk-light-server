@@ -2,6 +2,6 @@ export type CommandHandler = (args: number[]) => Promise<void | Record<string, a
 export type CommandTask = [CommandHandler, number[]]
 
 export interface Command {
-  command: string,
+  cmd: string,
   args?: number[]
 }

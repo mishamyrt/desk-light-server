@@ -13,7 +13,7 @@ async function main () {
     .on('start_ambilight', args => device.startAmbilight(args))
     .on('stop_animation', () => device.stopAnimation())
     .on('set_ambilight_color', args => device.setAmbilightColor(args))
-    .on('get_properties', () => device.getProperties())
+    .on('get_props', () => device.getProperties())
 }
 
 main()

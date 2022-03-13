@@ -43,9 +43,9 @@ class CommandServer {
       }, client)
     }
 
-    if (command.command in this.handlers) {
+    if (command.cmd in this.handlers) {
       const args = command.args || []
-      const result = await this.handlers[command.command](args)
+      const result = await this.handlers[command.cmd](args)
       if (!result) return
       return this.sendMessage(result, client)
     }

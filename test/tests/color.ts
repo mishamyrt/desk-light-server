@@ -6,7 +6,7 @@ const test: LightTest = ['color', async ({ count, client }) => {
     const color = randomRGB()
     console.log('Writing color', `rgb(${color.join(', ')})`)
     await client.send({
-      command: 'set_color',
+      cmd: 'set_color',
       args: color
     })
     await client.sleep(1000)
