@@ -15,5 +15,5 @@ export async function runTests (
       count
     })
   }
-  client.close()
+  process.exit(0)
 }

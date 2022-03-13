@@ -19,6 +19,7 @@ const test: LightTest = ['state', async ({ count, client }) => {
     })
     await client.sleep(500)
     await client.send({ command: 'get_properties' })
+    await client.sleep(500)
     const response = await client.read()
     if (response.state &&
         brightness === response.brightness &&

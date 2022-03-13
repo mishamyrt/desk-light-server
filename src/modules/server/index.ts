@@ -1,21 +1,18 @@
-import { createServer, Socket } from 'net'
-import { Command, CommandHandler, CommandTask } from './types'
+import { createSocket, RemoteInfo, Socket } from 'dgram'
+import { Command, CommandHandler } from './types'
 
 class CommandServer {
   private handlers: Record<string, CommandHandler> = {}
-  private client: Socket | null = null
-  private isBusy = false
-  private tasks: CommandTask[] = []
+  private server: Socket
 
   constructor (port: number, host: string) {
-    createServer()
-      .on('connection', client => this.handleNewClient(client))
-      .on('data', data => this.handleData(data))
-      .on('close', () => this.handleDisconnect())
-      .on('error', () => this.handleDisconnect())
-      .listen(port, host, () => {
+    this.server = createSocket('udp4')
+    this.server
+      .on('message', (msg, info) => this.handleMessage(msg, info))
+      .on('listening', () => {
         console.log(`Command server running on ${host}:${port}`)
       })
+      .bind(port, host)
   }
 
   public on (command: string, handler: CommandHandler) {
@@ -23,34 +20,39 @@ class CommandServer {
     return this
   }
 
-  private handleNewClient (client: Socket) {
-    // if (this.isBusy) {
-    //   client.write(JSON.stringify({
-    //     error: 'There is a client already'
-    //   }))
-    //   client.end()
-    //   return
-    // }
-    this.client = client
-    client
-      .on('data', data => this.handleData(data))
-      .on('close', () => this.handleDisconnect())
-      .on('error', () => this.handleDisconnect())
-    this.isBusy = true
+  private sendMessage (data: Record<string, unknown>, client: RemoteInfo): Promise<void> {
+    return new Promise(resolve => {
+      this.server.send(Buffer.from(JSON.stringify(data)), client.port, client.address, (e) => {
+        if (e) {
+          console.log('Send error', e)
+        }
+        resolve()
+      })
+    })
   }
 
-  private handleDisconnect () {
-    this.client = null
-  }
+  private async handleMessage (data: Buffer, client: RemoteInfo) {
+    let command: Command
+    try {
+      command = JSON.parse(data.toString()) as Command
+    } catch (e) {
+      console.error('Command parsing error', e)
+      return this.sendMessage({
+        status: 'error',
+        message: `${e}`
+      }, client)
+    }
 
-  private async handleData (data: Buffer) {
-    const command = JSON.parse(data.toString()) as Command
     if (command.command in this.handlers) {
       const args = command.args || []
       const result = await this.handlers[command.command](args)
-      if (!result || !this.client) return
-      this.client.write(JSON.stringify(result))
+      if (!result) return
+      return this.sendMessage(result, client)
     }
+    return this.sendMessage({
+      status: 'error',
+      message: 'Unknown command'
+    }, client)
   }
 }
 

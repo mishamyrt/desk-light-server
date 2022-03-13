@@ -1,29 +1,34 @@
-import { Socket } from 'net'
 import { Command } from '../../src/modules/server/types'
 import { sleep } from '../../src/modules/flow'
+import { createSocket, Socket } from 'dgram'
 
 export class LightClient {
   private response: string = ''
+  private socket: Socket
 
   constructor (
-    private socket: Socket
+    private readonly port: number,
+    private readonly host: string
   ) {
-    this.socket.on('data', data => {
+    this.socket = createSocket('udp4')
+    this.socket.on('message', data => {
       this.response = data.toString()
     })
   }
 
-  public async send (c: Command) {
-    this.socket.write(JSON.stringify(c))
-    sleep(10)
+  public send (c: Command): Promise<void> {
+    return new Promise(resolve => {
+      this.socket.send(
+        JSON.stringify(c),
+        this.port,
+        this.host,
+        () => resolve()
+      )
+    })
   }
 
   public sleep (ms: number) {
     return sleep(ms)
-  }
-
-  public close () {
-    this.socket.destroy()
   }
 
   public async read (): Promise<Record<string, any>> {
@@ -39,17 +44,17 @@ export class LightClient {
   }
 }
 
-function createSocket (port: number, host: string): Promise<Socket> {
-  return new Promise((resolve) => {
-    const client = new Socket()
-    client.connect(port, host, () => resolve(client))
-  })
-}
+// function createSocket (port: number, host: string): Promise<Socket> {
+//   return new Promise((resolve) => {
+//     const client = new Socket()
+//     client.connect(port, host, () => resolve(client))
+//   })
+// }
 
 export async function createLightClient (
   port: number,
   host: string
 ): Promise<LightClient> {
-  const client = await createSocket(port, host)
-  return new LightClient(client)
+  // const client = await createSocket(port, host)
+  return new LightClient(port, host)
 }
