@@ -14,7 +14,7 @@ cd server
 npm ci --production
 sudo cp -f light-server.service /etc/systemd/system/light-server.service
 sudo systemctl daemon-reload
-sudo service light-server start
+sudo service light-server restart
 sleep 2
 systemctl is-active --quiet light-server && echo Service is running
 "
