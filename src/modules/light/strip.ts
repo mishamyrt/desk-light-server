@@ -10,6 +10,7 @@ export class LightStrip {
     private port: SerialPort
     private data = -1
     private isInLog = false
+    private stack: Task[] = []
     private _brightness = 128
     private _state = false
     private _color: [number, number, number] = [0, 0, 0]
@@ -125,9 +126,10 @@ export class LightStrip {
         return
       }
       this.send([code, ...args])
+      return {
+        status: 'ok'
+      }
     }
-
-    private stack: Task[] = []
 
     private createTask (payload: Buffer): Task {
       return () => new Promise(resolve => {
