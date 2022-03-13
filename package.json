@@ -5,11 +5,10 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc",
-    "start": "node app/app",
+    "build": "rm -rf dist/ && tsc",
+    "start": "node dist/src",
     "prestart": "npm run build",
-    "firmware:compile": "cd firmware/lightstrip && arduino-cli compile --fqbn arduino:avr:nano:cpu=atmega328old LightStrip",
-    "firmware:upload": "cd firmware/lightstrip && arduino-cli upload -p /dev/tty.wchusbserial11440 --fqbn arduino:avr:nano:cpu=atmega328old LightStrip"
+    "deploy": "sh -c scripts/deploy.sh"
   },
   "keywords": [],
   "author": "",

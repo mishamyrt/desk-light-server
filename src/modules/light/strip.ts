@@ -1,6 +1,7 @@
-import { ReadlineParser, SerialPort } from "serialport";
+import { ReadlineParser, SerialPort } from 'serialport'
 import { sleep } from '../flow'
 import { Command } from './commands'
+import { Task } from './types'
 
 /**
  * Class that implements table light strip data protocol
@@ -8,97 +9,137 @@ import { Command } from './commands'
 export class LightStrip {
     private port: SerialPort
     private data = -1
-    private isLocked = false
     private isInLog = false
+    private _brightness = 128
+    private _state = false
+    private _color: [number, number, number] = [0, 0, 0]
 
     constructor (path: string) {
-        this.port = new SerialPort({
-            path,
-            baudRate: 9600
-        });
-        const parser = new ReadlineParser({ delimiter: '\n' })
-        this.port
-            .pipe(parser)
-            .on('data', data => this.handleData(data))
+      this.port = new SerialPort({
+        path,
+        baudRate: 2000000
+      })
+      const parser = new ReadlineParser({ delimiter: '\n' })
+      this.port
+        .pipe(parser)
+        .on('data', data => this.handleData(data))
+      this.runTasks()
     }
 
-    public async ready() {
-        return this.waitForCode(1)
+    public async ready () {
+      return this.waitForCode(1)
     }
 
-    public setPower(enabled: boolean) {
-        return this.sendCommand(
-            enabled
-                ? Command.PowerOn
-                : Command.PowerOff
-        )
+    // COMMAND_AMBILIGHT invert zones_count {start_index count}
+    // 4 1 3 0 40 41 40 81 40
+    public startAmbilight (params: number[]) {
+      return this.sendCommand(Command.StartAmbilight, params)
     }
 
-    public setColor(r: number, g: number, b: number) {
-        return this.sendCommand(Command.SetColor, [r, g, b])
+    public stopAnimation () {
+      return this.sendCommand(Command.StopAnimation)
     }
 
-    public setBrightness(value: number) {
-        return this.sendCommand(Command.SetBrightness, [value])
+    public async setAmbilightColor (colors: number[]) {
+      return this.sendCommand(Command.SetAmbilightColor, colors)
     }
 
-    private async whenUnlocked () {
-        while(true) {
-            if (this.isLocked) {
-                await sleep(5)
-                continue
-            }
-            return
+    public async getProperties () {
+      return {
+        color: this._color,
+        state: this._state,
+        brightness: this._brightness
+      }
+    }
+
+    public setPower (enabled: boolean) {
+      this._state = enabled
+      return this.sendCommand(
+        enabled
+          ? Command.PowerOn
+          : Command.PowerOff
+      )
+    }
+
+    public setColor (r: number, g: number, b: number) {
+      this._color[0] = r
+      this._color[1] = g
+      this._color[2] = b
+      return this.sendCommand(Command.SetColor, [r, g, b])
+    }
+
+    public setBrightness (value: number) {
+      this._brightness = value
+      return this.sendCommand(Command.SetBrightness, [value])
+    }
+
+    private async runTasks () {
+      while (true) {
+        if (this.stack.length > 0) {
+          const task = this.stack.shift()
+          if (!task) {
+            throw Error('There is no task')
+          }
+          await task()
         }
+        await sleep(5)
+      }
     }
 
-    private handleData(data: string) {
-        if (this.isInLog) {
-            console.log('log', data)
-            this.isInLog = false
-            return
-        }
-        const code = parseInt(data)
-        if (code === 101010) {
-            this.isInLog = true
-            return
-        }
-        this.data = code
+    private handleData (data: string) {
+      if (this.isInLog) {
+        console.log('log', data)
+        this.isInLog = false
+        return
+      }
+      const code = parseInt(data)
+      if (code === 101010) {
+        this.isInLog = true
+        return
+      }
+      this.data = code
     }
 
     private async recieve () {
-        while (true) {
-            if (this.data === -1) {
-                await sleep(5)
-                continue
-            }
-            const value = this.data
-            this.data = -1
-            return value
+      while (true) {
+        if (this.data === -1) {
+          await sleep(5)
+          continue
         }
+        const value = this.data
+        this.data = -1
+        return value
+      }
     }
 
-    private async waitForCode(expected: number) {
-        const actual = await this.recieve()
-        if (actual !== expected) {
-            throw new Error(`Wrong code. ${actual} given, ${expected} expected`)
-        }
+    private async waitForCode (expected: number) {
+      const actual = await this.recieve()
+      if (actual !== expected) {
+        throw new Error(`Wrong code. ${actual} given, ${expected} expected`)
+      }
     }
 
-    private async sendCommand(code: number, args?: number[]) {
-        await this.whenUnlocked();
-        this.isLocked = true
-        if (!args?.length) {
-            this.send([code])
-            this.isLocked = false
-            return
-        }
-        this.send([code, ...args])
-        this.isLocked = false
+    private async sendCommand (code: number, args?: number[]) {
+      if (!args?.length) {
+        this.send([code])
+        return
+      }
+      this.send([code, ...args])
     }
 
-    private send(command: number[]) {
-        console.log([...command, ])
-        this.port.write(Buffer.from([...command, 0x256]))
+    private stack: Task[] = []
+
+    private createTask (payload: Buffer): Task {
+      return () => new Promise(resolve => {
+        this.port.write(payload)
+        this.port.drain(() => resolve())
+      })
+    }
+
+    private send (command: number[]) {
+      const request = Buffer.from([...command, 0x1337])
+      this.stack.push(
+        this.createTask(request)
+      )
     }
 }

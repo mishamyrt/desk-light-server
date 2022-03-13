@@ -1,0 +1,13 @@
+[Unit]
+Description=Desk Light Server
+After=syslog.target
+After=network.target
+[Service]
+Restart=always
+User=root
+Group=root
+WorkingDirectory=/home/mishamyrt/server
+ExecStart=/usr/bin/node dist/src
+
+[Install]
+WantedBy=multi-user.target

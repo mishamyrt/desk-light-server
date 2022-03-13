@@ -3,6 +3,7 @@ import { Command, CommandHandler, CommandTask } from './types'
 
 class CommandServer {
   private handlers: Record<string, CommandHandler> = {}
+  private client: Socket | null = null
   private isBusy = false
   private tasks: CommandTask[] = []
 
@@ -23,13 +24,14 @@ class CommandServer {
   }
 
   private handleNewClient (client: Socket) {
-    if (this.isBusy) {
-      client.write(JSON.stringify({
-        error: 'There is a client already'
-      }))
-      client.end()
-      return
-    }
+    // if (this.isBusy) {
+    //   client.write(JSON.stringify({
+    //     error: 'There is a client already'
+    //   }))
+    //   client.end()
+    //   return
+    // }
+    this.client = client
     client
       .on('data', data => this.handleData(data))
       .on('close', () => this.handleDisconnect())
@@ -38,23 +40,16 @@ class CommandServer {
   }
 
   private handleDisconnect () {
-    this.isBusy = false
+    this.client = null
   }
 
-  private runScheduler () {
-
-  }
-
-  private handleData (data: Buffer) {
+  private async handleData (data: Buffer) {
     const command = JSON.parse(data.toString()) as Command
     if (command.command in this.handlers) {
       const args = command.args || []
-      this.handlers[command.command](args)
-      // const args = command.args || []
-      // this.tasks.push([
-      //   this.handlers[command.command],
-      //   args
-      // ])
+      const result = await this.handlers[command.command](args)
+      if (!result || !this.client) return
+      this.client.write(JSON.stringify(result))
     }
   }
 }
