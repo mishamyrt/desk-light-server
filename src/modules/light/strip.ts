@@ -13,7 +13,7 @@ export class LightStrip {
     private stack: Task[] = []
     private _brightness = 128
     private _state = false
-    private _color: [number, number, number] = [0, 0, 0]
+    private _color: [number, number, number] = [255, 255, 255]
 
     constructor (path: string) {
       this.port = new SerialPort({
@@ -53,13 +53,14 @@ export class LightStrip {
       }
     }
 
-    public setPower (enabled: boolean) {
-      this._state = enabled
-      return this.sendCommand(
-        enabled
-          ? Command.PowerOn
-          : Command.PowerOff
-      )
+    public powerOff () {
+      this._state = false
+      return this.sendCommand(Command.PowerOff)
+    }
+
+    public powerOn () {
+      this._state = true
+      return this.sendCommand(Command.PowerOn, this._color)
     }
 
     public setColor (r: number, g: number, b: number) {
