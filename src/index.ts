@@ -1,8 +1,13 @@
-import { COMMANDS_PORT, HOST, LIGHT_DEV } from './config'
+import { COMMANDS_PORT, HOST } from './config'
 import { createCommandServer } from './modules/server'
 import { LightStrip } from './modules/light'
 
+const LIGHT_DEV = process.env.CONTROLLER_PATH
+
 async function main () {
+  if (!LIGHT_DEV) {
+    process.exit(0)
+  }
   const device = new LightStrip(LIGHT_DEV)
   await device.ready()
   await device.powerOn()

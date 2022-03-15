@@ -51,7 +51,7 @@ class CommandServer {
     }
     return this.sendMessage({
       status: 'error',
-      message: 'Unknown command'
+      message: `Unknown command ${command.cmd}`
     }, client)
   }
 }

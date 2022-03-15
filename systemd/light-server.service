@@ -3,11 +3,11 @@ Description=Desk Light Server
 After=syslog.target
 After=network.target
 [Service]
+Environment="CONTROLLER_PATH=/dev/ttyUSB0"
 Restart=always
 User=root
 Group=root
 WorkingDirectory=/home/mishamyrt/server
 ExecStart=/usr/bin/node dist/src
-
 [Install]
 WantedBy=multi-user.target
