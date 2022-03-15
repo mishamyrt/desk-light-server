@@ -5,6 +5,7 @@ import { LightStrip } from './modules/light'
 async function main () {
   const device = new LightStrip(LIGHT_DEV)
   await device.ready()
+  device.setPower(true)
   createCommandServer(COMMANDS_PORT, HOST)
     .on('power_on', () => device.setPower(true))
     .on('power_off', () => device.setPower(false))
