@@ -63,16 +63,10 @@ export class LightStrip {
       return this.sendCommand(Command.PowerOn, this._color)
     }
 
-    public setColor (r: number, g: number, b: number) {
-      this._color[0] = r
-      this._color[1] = g
-      this._color[2] = b
-      return this.sendCommand(Command.SetColor, [r, g, b])
-    }
-
-    public setBrightness (value: number) {
-      this._brightness = value
-      return this.sendCommand(Command.SetBrightness, [value])
+    public setColor (color: [number, number, number], brightness: number) {
+      this._color = [...color]
+      this._brightness = brightness
+      return this.sendCommand(Command.SetColor, [...color, this._brightness])
     }
 
     private async runTasks () {
