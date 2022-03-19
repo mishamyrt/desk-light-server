@@ -8,6 +8,6 @@ Restart=always
 User=root
 Group=root
 WorkingDirectory=/home/mishamyrt/server
-ExecStart=/usr/bin/node dist/src
+ExecStart=/usr/bin/node dist
 [Install]
 WantedBy=multi-user.target

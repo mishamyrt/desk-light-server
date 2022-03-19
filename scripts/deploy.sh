@@ -7,7 +7,7 @@ mkdir -p server/dist
 echo "Copy files"
 scp package*.json 'lightstrip:server/'
 scp systemd/light-server.service lightstrip:server/light-server.service
-scp -r dist/src/ 'lightstrip:server/dist/src'
+scp -r dist/ 'lightstrip:server/'
 echo "Installing service"
 ssh lightstrip "
 cd server

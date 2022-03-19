@@ -21,6 +21,10 @@ export class LightStrip {
       }
     }
 
+    public async sendRaw (command: number[]) {
+      await this.connection.send(command)
+    }
+
     public async powerOff () {
       this._state = false
       await this.connection.send([Command.PowerOff])
