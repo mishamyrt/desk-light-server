@@ -7,7 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "rm -rf dist/ && tsc",
     "start": "node dist/",
-    "prestart": "npm run build",
+    "start-debug": "NODE_ENV=dev node dist/",
     "deploy": "sh -c scripts/deploy.sh",
     "ping": "node dist/ping",
     "dap-ping": "sh -c scripts/dap-ping.sh"
