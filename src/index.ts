@@ -1,15 +1,19 @@
 import { COMMANDS_PORT, HOST } from './config'
 import { createCommandServer } from './modules/server'
 import { LightStrip } from './modules/light'
+import { DapConnector, ConnectorMock, createConnector } from './modules/dap'
 
 const LIGHT_DEV = process.env.CONTROLLER_PATH
 
 async function main () {
-  if (!LIGHT_DEV) {
-    process.exit(0)
+  let connector: DapConnector
+  if (LIGHT_DEV) {
+    connector = await createConnector(LIGHT_DEV)
+  } else {
+    console.log('Using mock')
+    connector = ConnectorMock
   }
-  const device = new LightStrip(LIGHT_DEV)
-  await device.ready()
+  const device = new LightStrip(connector)
   await device.powerOn()
   createCommandServer(COMMANDS_PORT, HOST)
     .on('power_on', () => device.powerOn())
@@ -22,9 +26,6 @@ async function main () {
       ],
       args[3] // Brightness
     ))
-    .on('start_ambilight', args => device.startAmbilight(args))
-    .on('stop_animation', () => device.stopAnimation())
-    .on('set_ambilight_color', args => device.setAmbilightColor(args))
     .on('get_props', () => device.getProperties())
 }
 

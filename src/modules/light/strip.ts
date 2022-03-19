@@ -1,49 +1,17 @@
-import { ReadlineParser, SerialPort } from 'serialport'
-import { sleep } from '../flow'
 import { Command } from './commands'
-import { Task } from './types'
+import { DapConnector } from '../dap'
 
 /**
  * Class that implements table light strip data protocol
  */
 export class LightStrip {
-    private port: SerialPort
-    private data = -1
-    private isInLog = false
-    private stack: Task[] = []
     private _brightness = 128
     private _state = false
     private _color: [number, number, number] = [255, 255, 255]
 
-    constructor (path: string) {
-      this.port = new SerialPort({
-        path,
-        baudRate: 2000000
-      })
-      const parser = new ReadlineParser({ delimiter: '\n' })
-      this.port
-        .pipe(parser)
-        .on('data', data => this.handleData(data))
-      this.runTasks()
-    }
-
-    public async ready () {
-      return this.waitForCode(1)
-    }
-
-    // COMMAND_AMBILIGHT invert zones_count {start_index count}
-    // 4 1 3 0 40 41 40 81 40
-    public startAmbilight (params: number[]) {
-      return this.sendCommand(Command.StartAmbilight, params)
-    }
-
-    public stopAnimation () {
-      return this.sendCommand(Command.StopAnimation)
-    }
-
-    public async setAmbilightColor (colors: number[]) {
-      return this.sendCommand(Command.SetAmbilightColor, colors)
-    }
+    constructor (
+      private connection: DapConnector
+    ) { }
 
     public async getProperties () {
       return {
@@ -53,90 +21,19 @@ export class LightStrip {
       }
     }
 
-    public powerOff () {
+    public async powerOff () {
       this._state = false
-      return this.sendCommand(Command.PowerOff)
+      await this.connection.send([Command.PowerOff])
     }
 
-    public powerOn () {
+    public async powerOn () {
       this._state = true
-      return this.sendCommand(Command.PowerOn, this._color)
+      await this.connection.send([Command.PowerOn, ...this._color])
     }
 
-    public setColor (color: [number, number, number], brightness: number) {
+    public async setColor (color: [number, number, number], brightness: number) {
       this._color = [...color]
       this._brightness = brightness
-      return this.sendCommand(Command.SetColor, [...color, this._brightness])
-    }
-
-    private async runTasks () {
-      while (true) {
-        if (this.stack.length > 0) {
-          const task = this.stack.shift()
-          if (!task) {
-            throw Error('There is no task')
-          }
-          await task()
-        }
-        await sleep(5)
-      }
-    }
-
-    private handleData (data: string) {
-      if (this.isInLog) {
-        console.log('log', data)
-        this.isInLog = false
-        return
-      }
-      const code = parseInt(data)
-      if (code === 101010) {
-        this.isInLog = true
-        return
-      }
-      this.data = code
-    }
-
-    private async recieve () {
-      while (true) {
-        if (this.data === -1) {
-          await sleep(5)
-          continue
-        }
-        const value = this.data
-        this.data = -1
-        return value
-      }
-    }
-
-    private async waitForCode (expected: number) {
-      const actual = await this.recieve()
-      if (actual !== expected) {
-        throw new Error(`Wrong code. ${actual} given, ${expected} expected`)
-      }
-    }
-
-    private async sendCommand (code: number, args?: number[]) {
-      if (!args?.length) {
-        this.send([code])
-        return
-      }
-      this.send([code, ...args])
-      return {
-        status: 'ok'
-      }
-    }
-
-    private createTask (payload: Buffer): Task {
-      return () => new Promise(resolve => {
-        this.port.write(payload)
-        this.port.drain(() => resolve())
-      })
-    }
-
-    private send (command: number[]) {
-      const request = Buffer.from([...command, 0x1337])
-      this.stack.push(
-        this.createTask(request)
-      )
+      await this.connection.send([Command.SetColor, ...color, this._brightness])
     }
 }

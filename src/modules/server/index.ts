@@ -22,16 +22,19 @@ class CommandServer {
 
   private sendMessage (data: Record<string, unknown>, client: RemoteInfo): Promise<void> {
     return new Promise(resolve => {
+      console.log('message', client.address, data)
       this.server.send(Buffer.from(JSON.stringify(data)), client.port, client.address, (e) => {
         if (e) {
           console.log('Send error', e)
         }
+        console.log('message sent', client.address)
         resolve()
       })
     })
   }
 
   private async handleMessage (data: Buffer, client: RemoteInfo) {
+    console.log(client.address, client.port, data)
     let command: Command
     try {
       command = JSON.parse(data.toString()) as Command
