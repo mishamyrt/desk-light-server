@@ -58,7 +58,12 @@ class CommandServer {
       const args = command.args || []
       debug(`Running handler for ${command.cmd}`)
       const result = await this.handlers[command.cmd](args)
-      if (!result) return
+      if (!result) {
+        this.sendMessage({
+          status: 'success'
+        }, client)
+        return
+      }
       return this.sendMessage(result, client)
     }
     return this.sendMessage({
