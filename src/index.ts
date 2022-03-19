@@ -2,6 +2,9 @@ import { COMMANDS_PORT, HOST } from './config'
 import { createCommandServer } from './modules/server'
 import { LightStrip } from './modules/light'
 import { DapConnector, ConnectorMock, createConnector } from './modules/dap'
+import { createLog } from './modules/log'
+
+const { warn } = createLog('App')
 
 const LIGHT_DEV = process.env.CONTROLLER_PATH
 
@@ -10,7 +13,7 @@ async function main () {
   if (LIGHT_DEV) {
     connector = await createConnector(LIGHT_DEV)
   } else {
-    console.log('Using mock')
+    warn('Using Dap device mock')
     connector = ConnectorMock
   }
   const device = new LightStrip(connector)

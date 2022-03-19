@@ -9,6 +9,9 @@ import {
   CODE_SUCCESS,
   CODE_ERROR
 } from './constants'
+import { createLog } from '../log'
+
+const { log, debug } = createLog('Dap')
 
 export class Connector implements DapConnector {
   private serial: SerialPort
@@ -19,14 +22,16 @@ export class Connector implements DapConnector {
   private isReady = false
   private mutex = new Mutex()
 
-  constructor (path: string) {
+  constructor (
+    private readonly path: string
+  ) {
     this.serial = new SerialPort({
       path,
       baudRate: BAUD_RATE
     })
     this.stream = new PassThrough()
       .on('data', (chunk: Buffer) => {
-        console.log(chunk)
+        debug('Got data', chunk)
         this.buffer.push(...chunk)
       })
     this.serial.pipe(this.stream)
@@ -38,6 +43,7 @@ export class Connector implements DapConnector {
       return
     }
     await this.getNextMessage()
+    log(`Connected to Dap device on ${this.path}`)
     this.isReady = true
   }
 
@@ -64,24 +70,30 @@ export class Connector implements DapConnector {
   private parseMessage () {
     const isMessageFound = this.moveToMessage()
     if (!isMessageFound || this.buffer.length < 3) {
+      debug('Valid message not found')
       return
     }
     const length = this.buffer.shift()
     if (!length || this.buffer.length < length + 1) {
+      debug(`Wrong length ${length}`)
       return
     }
     const message: number[] = []
     for (let i = 0; i < length; i++) {
       const value = this.buffer.shift()
       if (!Number.isInteger(value)) {
+        debug('Not enough symbols to parse message header')
         return
       }
       message.push(value!)
     }
-    const checksum = this.buffer.shift()
-    if (!Number.isInteger(checksum) || calculateChecksum(message) !== checksum) {
+    const actualCRC = this.buffer.shift()
+    const expectedCRC = calculateChecksum(message)
+    if (!Number.isInteger(actualCRC) || expectedCRC !== actualCRC) {
+      debug(`Wrong checksum. Expected ${expectedCRC}, actual ${actualCRC}`)
       return
     }
+    debug('Parsed message', message)
     this.messages.push(message)
   }
 
