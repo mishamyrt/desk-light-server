@@ -22,13 +22,10 @@ async function main () {
     .on('power_on', () => device.powerOn())
     .on('power_off', () => device.powerOff())
     .on('set_color', args => device.setColor(
-      [
-        args[0], // R
-        args[1], // G
-        args[2] //  B
-      ],
-      args[3] // Brightness
+      args.slice(1),
+      args[0]
     ))
+    .on('set_color_zones', args => device.setColorZones(args))
     .on('get_props', () => device.getProperties())
     .on('send_raw', args => device.sendRaw(args))
 }

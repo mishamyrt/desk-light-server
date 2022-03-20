@@ -35,9 +35,23 @@ export class LightStrip {
       await this.connection.send([Command.PowerOn, ...this._color])
     }
 
-    public async setColor (color: [number, number, number], brightness: number) {
-      this._color = [...color]
+    public async setColor (colors: number[], brightness: number) {
+      if (colors.length === 3) {
+        this._color = colors.slice(0, 3) as [number, number, number]
+      }
       this._brightness = brightness
-      await this.connection.send([Command.SetColor, ...color, this._brightness])
+      await this.connection.send([
+        Command.SetColor,
+        this._brightness,
+        ...colors
+      ])
+    }
+
+    public async setColorZones (mapping: number[]) {
+      await this.connection.send([
+        Command.SetColorZones,
+        mapping.length,
+        ...mapping
+      ])
     }
 }
