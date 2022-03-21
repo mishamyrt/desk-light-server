@@ -21,6 +21,10 @@ export class LightStrip {
       }
     }
 
+    public async startEffect (effectCode: number) {
+      this.connection.send([Command.StartEffect, effectCode])
+    }
+
     public async sendRaw (command: number[]) {
       await this.connection.send(command)
     }
@@ -35,7 +39,7 @@ export class LightStrip {
       await this.connection.send([Command.PowerOn, ...this._color])
     }
 
-    public async setColor (colors: number[], brightness: number) {
+    public async setColor (brightness: number, colors: number[]) {
       if (colors.length === 3) {
         this._color = colors.slice(0, 3) as [number, number, number]
       }
@@ -50,7 +54,6 @@ export class LightStrip {
     public async setColorZones (mapping: number[]) {
       await this.connection.send([
         Command.SetColorZones,
-        mapping.length,
         ...mapping
       ])
     }
