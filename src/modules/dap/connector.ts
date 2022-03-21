@@ -129,6 +129,7 @@ export class Connector implements DapConnector {
       ...message,
       calculateChecksum(message)
     ])
+    debug('Writing', [...data])
     this.serial.write(data)
     const result = await this.getNextMessage()
     switch (result[0]) {
